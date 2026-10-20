@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thrift Finder</title>
+<link rel="icon" href="/icon-180.png">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Thrift Finder">
+<meta name="theme-color" content="#2f6b4f">
+<style>
+:root{--bg:#faf8f5;--card:#fff;--text:#1f1d1a;--muted:#6f6a63;--line:#e7e2da;--accent:#2f6b4f;--accent-text:#fff;--soft:#eef4f0;--err:#b3412e}
+@media (prefers-color-scheme:dark){:root{--bg:#171614;--card:#211f1c;--text:#ede9e3;--muted:#a19b92;--line:#35312c;--accent:#7cc4a0;--accent-text:#10241a;--soft:#1f2b25;--err:#e57d69}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1200px;margin:0 auto;padding:28px 16px 60px}
+h1{font-size:26px;margin:0 0 4px}
+.lede{color:var(--muted);margin:0 0 20px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;grid-template-columns:200px 1fr;gap:18px}
+@media (max-width:640px){.panel{grid-template-columns:1fr}.drop{aspect-ratio:auto;width:100%;height:150px}}
+.drop{border:2px dashed var(--line);border-radius:12px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;position:relative;overflow:hidden;padding:12px}
+.drop:hover,.drop.over{border-color:var(--accent);color:var(--text)}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.drop .x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:16px;cursor:pointer;display:none}
+.drop.has img,.drop.has .x{display:block}
+.drop.has .hint{display:none}
+.drop .big{font-size:28px;display:block;margin-bottom:6px}
+.fields{display:flex;flex-direction:column;gap:14px}
+label{font-size:13px;font-weight:600;display:block;margin-bottom:6px}
+input[type=text],input[type=number]{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.price{position:relative;width:140px}.price span{position:absolute;left:12px;top:10px;color:var(--muted)}.price input{padding-left:24px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:13px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--text);cursor:pointer;user-select:none}
+.chip[aria-pressed=true]{background:var(--soft);border-color:var(--accent);color:var(--text)}
+.chip.err{color:var(--err);border-color:var(--err)}
+a.chip{text-decoration:none}
+.city{width:150px}
+button.go{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-text);border:0;border-radius:10px;padding:11px 22px;cursor:pointer}
+button.go:disabled{opacity:.55;cursor:default}
+.small{font-size:12px;color:var(--muted)}
+#status{margin:22px 0 10px;min-height:22px}
+#status .msg{font-weight:600}
+#status.error .msg{color:var(--err)}
+.bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:8px;display:none}.bar div{height:100%;width:0;background:var(--accent);transition:width .2s}
+.toolbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 14px}
+select{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;color:inherit;text-decoration:none;display:flex;flex-direction:column}
+.card:hover{border-color:var(--accent)}
+.img{position:relative;aspect-ratio:1;overflow:hidden;background:var(--line)}.img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.score{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:2px 7px;border-radius:999px}
+.body{padding:10px 12px 12px}.line{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.amt{font-weight:700;font-size:17px;color:var(--accent)}.site{font-size:12px;color:var(--muted)}
+.title{font-size:13px;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.empty{color:var(--muted);padding:30px 0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.ghost{font:inherit;font-size:14px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.ghost:hover{border-color:var(--accent)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text);max-width:560px;width:calc(100% - 32px);padding:22px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{margin:0 0 6px;font-size:20px}
+.qrs{display:flex;gap:18px;flex-wrap:wrap;margin:14px 0}
+.qr{flex:1 1 200px}.qr svg{width:100%;max-width:220px;background:#fff;border-radius:10px;padding:6px;display:block}
+.qr b{display:block;margin:8px 0 2px}.qr code{font-size:11px;word-break:break-all;color:var(--muted)}
+dialog ol{padding-left:20px;margin:8px 0}dialog li{margin:4px 0}
+.touch-only{display:none}
+@media (hover:none){.touch-only{display:inline}.mouse-only{display:none}}
+.seemore{margin-top:6px}.seemore a{color:var(--muted)}.seemore a:hover{color:var(--accent)}.seemore a.bad{color:var(--err)}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1>🧥 Thrift Finder</h1>
+    <button type="button" class="ghost" id="phoneBtn" hidden>📱 Use on phone</button>
+  </div>
+  <p class="lede">Show it a photo or describe it. It checks the resale sites and ranks what's under your price.</p>
+
+  <form class="panel" id="form">
+    <div>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Add a photo">
+        <div class="hint"><span class="big">📷</span><span class="mouse-only">Drop a photo, click to choose,<br>or paste a screenshot (⌘V)</span><span class="touch-only">Tap to take a photo<br>or pick one / a screenshot</span></div>
+        <img id="preview" alt="">
+        <button type="button" class="x" id="clear" aria-label="Remove photo">×</button>
+      </div>
+      <input type="file" id="file" accept="image/*" hidden>
+    </div>
+
+    <div class="fields">
+      <div>
+        <label for="text" id="textLabel">What are you looking for?</label>
+        <input type="text" id="text" placeholder="e.g. levis black denim jacket" autocomplete="off">
+      </div>
+      <div class="row">
+        <div>
+          <label for="max">Max price</label>
+          <div class="price"><span>$</span><input type="number" id="max" min="1" step="1" value="40" required></div>
+        </div>
+        <div id="cityWrap">
+          <label for="city">Facebook city</label>
+          <input type="text" id="city" class="city" value="nyc" title="The city part of a Marketplace link, e.g. nyc, la, chicago, sanfrancisco">
+        </div>
+      </div>
+      <div>
+        <label>Sites</label>
+        <div class="chips" id="sites"></div>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <span class="small">Takes about 30 seconds. Everything runs on your computer.</span>
+        <button class="go" id="go" type="submit">Search</button>
+      </div>
+    </div>
+  </form>
+
+  <dialog id="phoneDlg">
+    <h2>📱 Use Thrift Finder on your phone</h2>
+    <div id="phoneBody"></div>
+    <div style="text-align:right"><button type="button" class="ghost" onclick="this.closest('dialog').close()">Done</button></div>
+  </dialog>
+
+  <div id="status"></div>
+  <div id="results"></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('tf.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('tf.' + k, JSON.stringify(v)); } catch {} },
+};
+
+let photo = null; // JPEG data URL, resized in the browser
+let lastResult = null;
+
+// ---------- Photo input: drop, click, paste ----------
+async function setPhoto(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 800 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    photo = c.toDataURL('image/jpeg', 0.9);
+  } catch {
+    return showStatus('Couldn’t read that photo. Try a JPG, PNG or a screenshot.', true);
+  }
+  $('preview').src = photo;
+  $('drop').classList.add('has');
+  $('textLabel').textContent = 'Brand or details (optional)';
+  $('text').placeholder = 'e.g. levis, size M';
+}
+function clearPhoto() {
+  photo = null;
+  $('preview').removeAttribute('src');
+  $('drop').classList.remove('has');
+  $('textLabel').textContent = 'What are you looking for?';
+  $('text').placeholder = 'e.g. levis black denim jacket';
+}
+$('drop').onclick = (e) => { if (e.target.id !== 'clear') $('file').click(); };
+$('drop').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } };
+$('clear').onclick = (e) => { e.stopPropagation(); clearPhoto(); };
+$('file').onchange = () => { setPhoto($('file').files[0]); $('file').value = ''; };
+['dragenter', 'dragover'].forEach((t) => $('drop').addEventListener(t, (e) => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave', 'drop'].forEach((t) => $('drop').addEventListener(t, (e) => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', (e) => setPhoto(e.dataTransfer.files[0]));
+document.addEventListener('paste', (e) => {
+  const item = [...e.clipboardData.items].find((i) => i.type.startsWith('image/'));
+  if (item) { e.preventDefault(); setPhoto(item.getAsFile()); }
+});
+
+// ---------- Phone link (only shown on the computer running it) ----------
+fetch('/api/phone').then((r) => (r.ok ? r.json() : null)).then((info) => {
+  if (!info) return; // we're on the phone
+  $('phoneBtn').hidden = false;
+  $('phoneBtn').onclick = () => {
+    $('phoneBody').innerHTML = !info.enabled
+      ? `<p>Phone access is off right now. Close Thrift Finder's window, then start it with the <b>for phone</b> launcher instead (or <code>npm run phone</code>).</p>`
+      : !info.links.length
+        ? `<p>This computer isn't on a network your phone can reach. Join Wi-Fi, then restart Thrift Finder.</p>`
+        : `<p class="small">Point your phone's camera at a code and tap the link. That phone stays signed in.</p>
+           <div class="qrs">${info.links.map((l) => `<div class="qr">${l.svg}<b>${esc(l.label)}</b><code>${esc(l.url)}</code></div>`).join('')}</div>
+           <ol class="small">
+             <li>On iPhone, tap <b>Share → Add to Home Screen</b> for an app icon. On Android: <b>⋮ → Add to Home screen</b>.</li>
+             <li>Keep this computer on and awake. Your phone uses it to search.</li>
+             ${info.links.some((l) => l.kind === 'tailscale') ? '' : '<li>Away from home? Install the free <b>Tailscale</b> app on this computer and your phone, then restart. A second code will show up here (see README).</li>'}
+           </ol>`;
+    $('phoneDlg').showModal();
+  };
+}).catch(() => {});
+
+// ---------- Settings (remembered between visits) ----------
+$('max').value = store.get('max', 40);
+$('city').value = store.get('city', 'nyc');
+let chosenSites = store.get('sites', null);
+fetch('/api/sites').then((r) => r.json()).then((sites) => {
+  chosenSites ??= sites.map((s) => s.key);
+  $('sites').innerHTML = sites.map((s) => `<button type="button" class="chip" data-key="${s.key}" aria-pressed="${chosenSites.includes(s.key)}">${esc(s.label)}</button>`).join('');
+  $('sites').onclick = (e) => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true');
+    chosenSites = [...$('sites').querySelectorAll('[aria-pressed=true]')].map((x) => x.dataset.key);
+    store.set('sites', chosenSites);
+    syncCity();
+  };
+  syncCity();
+});
+function syncCity() { $('cityWrap').style.display = chosenSites?.includes('facebook') ? '' : 'none'; }
+$('max').onchange = () => store.set('max', Number($('max').value));
+$('city').onchange = () => store.set('city', $('city').value.trim());
+
+// ---------- Search ----------
+function showStatus(msg, isError = false, extra = '') {
+  $('status').className = isError ? 'error' : '';
+  $('status').innerHTML = `<div class="msg">${esc(msg)}</div>${extra}`;
+}
+
+$('form').onsubmit = async (e) => {
+  e.preventDefault();
+  const text = $('text').value.trim();
+  if (!photo && !text) return showStatus('Add a photo or type what you’re looking for.', true), $('text').focus();
+  if (!chosenSites.length) return showStatus('Pick at least one site.', true);
+
+  $('go').disabled = true; $('go').textContent = 'Searching…';
+  $('results').innerHTML = '';
+  const siteChips = {};
+  showStatus(photo ? 'Looking at your photo…' : 'Starting…', false, '<div class="chips" id="live" style="margin-top:10px"></div><div class="bar" id="bar"><div></div></div>');
+
+  try {
+    const res = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, image: photo, maxPrice: Number($('max').value), sites: chosenSites, fbCity: $('city').value.trim() }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Server error ${res.status}`);
+
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const ev = JSON.parse(buf.slice(0, nl)); buf = buf.slice(nl + 1);
+        if (ev.type === 'status') $('status').querySelector('.msg').textContent = ev.message;
+        if (ev.type === 'site') {
+          siteChips[ev.site] = ev;
+          $('live').innerHTML = Object.values(siteChips).map((s) => `<span class="chip ${s.error ? 'err' : ''}">${esc(s.label)} · ${s.error ? 'failed' : s.count}</span>`).join('');
+        }
+        if (ev.type === 'progress') {
+          $('bar').style.display = 'block';
+          $('bar').firstChild.style.width = `${(100 * ev.done) / ev.total}%`;
+        }
+        if (ev.type === 'error') throw new Error(ev.message);
+        if (ev.type === 'done') { lastResult = ev.result; hiddenSites = new Set(); sortBy = 'best'; renderResults(); }
+      }
+    }
+  } catch (err) {
+    showStatus(err.message === 'Failed to fetch' ? 'Lost connection to Thrift Finder. Is its window still open on your computer?' : err.message, true);
+  } finally {
+    $('go').disabled = false; $('go').textContent = 'Search';
+  }
+};
+
+// ---------- Results ----------
+let sortBy = 'best';
+let hiddenSites = new Set();
+
+function renderResults() {
+  const r = lastResult;
+  const via = r.via ? ` <span class="small">(from your photo, via ${esc(r.via)})</span>` : '';
+  const siteLinks = r.sites.map((s) => `<a href="${esc(s.searchUrl)}" target="_blank" rel="noopener" class="${s.error ? 'bad' : ''}" title="${esc(s.error || `${s.count} listings read. Open the full search on the site`)}">${esc(s.label)}${s.error ? ' (failed)' : ''} ↗</a>`).join(' · ');
+  showStatus(`${r.items.length} listings under $${r.maxPrice} for “${r.query}”`, false, `${via}<div class="small seemore">See more on: ${siteLinks}</div>`);
+
+  if (!r.items.length) {
+    $('results').innerHTML = '<p class="empty">Nothing under that price. Try fewer words or a higher max price.</p>';
+    return;
+  }
+  const present = [...new Set(r.items.map((i) => i.site))];
+  const filters = present.map((k) => {
+    const label = r.items.find((i) => i.site === k).siteLabel;
+    const n = r.items.filter((i) => i.site === k).length;
+    return `<button type="button" class="chip" data-site="${k}" aria-pressed="${!hiddenSites.has(k)}" title="Show or hide ${esc(label)}">${esc(label)} · ${n}</button>`;
+  }).join('');
+
+  let items = r.items.filter((i) => !hiddenSites.has(i.site));
+  if (sortBy === 'price') items = [...items].sort((a, b) => a.price - b.price);
+
+  $('results').innerHTML = `
+    <div class="toolbar">
+      <div class="chips" id="filters">${filters}</div>
+      <label class="small" style="margin:0;font-weight:400">Sort
+        <select id="sort"><option value="best">Best match</option><option value="price">Lowest price</option></select>
+      </label>
+    </div>
+    <div class="grid">${items.map((it) => `
+      <a class="card" href="${esc(it.url)}" target="_blank" rel="noopener">
+        <div class="img">${it.image ? `<img loading="lazy" referrerpolicy="no-referrer" src="${esc(it.image)}" alt="">` : ''}<span class="score" title="Match score">${it.score}</span></div>
+        <div class="body">
+          <div class="line"><span class="amt">$${it.price.toFixed(2).replace(/\.00$/, '')}</span><span class="site">${esc(it.siteLabel)}</span></div>
+          <div class="title">${esc(it.title || '(untitled)')}</div>
+        </div>
+      </a>`).join('')}</div>`;
+  $('sort').value = sortBy;
+  $('sort').onchange = () => { sortBy = $('sort').value; renderResults(); };
+  $('filters').onclick = (e) => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    hiddenSites.has(b.dataset.site) ? hiddenSites.delete(b.dataset.site) : hiddenSites.add(b.dataset.site);
+    renderResults();
+  };
+}
+</script>
+</body>
+</html>

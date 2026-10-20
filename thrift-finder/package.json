@@ -1,0 +1,35 @@
+{
+  "name": "thrift-finder",
+  "version": "1.0.0",
+  "description": "Find secondhand items under your price on Poshmark, Mercari, Depop, ThredUp, eBay and Facebook Marketplace, from a photo or a description. Free, runs on your own computer.",
+  "scripts": {
+    "setup": "npm install --no-audit --no-fund && node setup.js",
+    "start": "node server.js",
+    "phone": "node server.js --phone"
+  },
+  "keywords": [
+    "thrift",
+    "secondhand",
+    "resale",
+    "poshmark",
+    "depop",
+    "ebay",
+    "clip",
+    "playwright"
+  ],
+  "author": "Ayushi",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@huggingface/transformers": "^4.3.1",
+    "playwright": "^1.64.1",
+    "qrcode": "^1.5.4"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "thrift-finder": "find.js"
+  },
+  "private": true
+}
